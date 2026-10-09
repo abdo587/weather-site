@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="تابع حالة الطقس الحالية وتوقعات الأيام القادمة لمدينتك مجانًا.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%98%80%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <title>الطقس</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/utils.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/ui.js" defer></script>
+    <script src="js/chart.js" defer></script>
+    <script src="js/theme.js" defer></script>
+    <script src="js/main.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">انتقل إلى المحتوى الرئيسي</a>
+    <header id="site-header">
+      <h1 id="site-title">الطقس</h1>
+      <form id="city-search-form" role="search">
+        <label for="city-search">ابحث عن مدينة</label>
+        <input id="city-search" name="city" type="search" placeholder="اسم المدينة">
+        <button id="search-button" type="submit" aria-label="ابحث عن مدينة">بحث</button>
+        <div id="city-search-results" role="list" aria-label="نتائج البحث عن المدن" aria-live="polite" aria-relevant="additions" hidden></div>
+      </form>
+      <button id="current-location-button" type="button" aria-label="عرض الطقس لموقعي الحالي">موقعي الحالي</button>
+    </header>
+
+    <main id="main-content">
+      <section id="current-weather" aria-labelledby="current-weather-title">
+        <h2 id="current-weather-title">الطقس الحالي</h2>
+        <div id="unit-controls" role="group" aria-label="إعدادات وحدات الطقس">
+          <button id="temperature-unit-button" type="button" aria-label="وحدة الحرارة الحالية مئوية، اضغط للتبديل" aria-pressed="true">°م</button>
+          <button id="wind-unit-button" type="button" aria-label="وحدة سرعة الرياح الحالية كيلومتر في الساعة، اضغط للتبديل" aria-pressed="true">كم/س</button>
+        </div>
+        <p>المدينة: <span id="city-name">اسم المدينة</span></p>
+        <p>التاريخ: <time id="weather-date">التاريخ</time></p>
+        <p>آخر تحديث: <time id="last-updated" aria-live="polite">—</time></p>
+        <p>درجة الحرارة: <span id="temperature">--</span></p>
+        <p>وصف الحالة: <span id="weather-description">وصف حالة الطقس</span></p>
+        <p>الإحساس الفعلي: <span id="apparent-temperature">--</span></p>
+        <p>الرطوبة: <span id="humidity">--</span></p>
+        <p>سرعة الرياح: <span id="wind-speed">--</span></p>
+      </section>
+
+      <section id="air-quality-section" aria-labelledby="air-quality-title">
+        <h2 id="air-quality-title">جودة الهواء</h2>
+        <article id="air-quality-card" aria-live="polite" aria-atomic="true"></article>
+      </section>
+
+      <section id="hourly-forecast" aria-labelledby="hourly-forecast-title">
+        <h2 id="hourly-forecast-title">توقعات الساعات القادمة</h2>
+        <div id="forecast-hours" role="list" aria-label="توقعات الطقس للساعات القادمة"></div>
+        <canvas
+          id="hourly-temperature-chart"
+          role="img"
+          tabindex="0"
+          aria-label="رسم بياني لدرجات الحرارة خلال الساعات القادمة"
+          aria-describedby="hourly-chart-tooltip"
+        ></canvas>
+        <p id="hourly-chart-tooltip" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
+      </section>
+
+      <section id="weather-forecast" aria-labelledby="forecast-title">
+        <h2 id="forecast-title">توقعات الأيام القادمة</h2>
+        <div id="forecast-days" role="list" aria-label="توقعات الطقس للأيام القادمة"></div>
+        <canvas
+          id="precipitation-chart"
+          role="img"
+          tabindex="0"
+          aria-label="رسم بياني لاحتمال الهطول خلال الأيام القادمة"
+          aria-describedby="precipitation-chart-tooltip"
+        ></canvas>
+        <p id="precipitation-chart-tooltip" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
+      </section>
+
+      <section id="status-messages" aria-label="حالة تحميل الطقس">
+        <p id="loading-message" role="status" aria-live="polite" aria-atomic="true" hidden>جاري التحميل...</p>
+        <p id="error-message" role="alert" aria-atomic="true" hidden>حدث خطأ أثناء تحميل بيانات الطقس.</p>
+      </section>
+    </main>
+
+    <footer id="site-footer">
+      <p>بيانات الطقس وجودة الهواء من Open-Meteo</p>
+    </footer>
+  </body>
+</html>

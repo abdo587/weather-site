@@ -1,0 +1,966 @@
+:root {
+  color-scheme: light dark;
+  font-family: Tahoma, "Noto Sans Arabic", "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --page-background: #f2f6fb;
+  --surface: #ffffff;
+  --surface-muted: #f5f8fc;
+  --text-primary: #1e2d42;
+  --text-secondary: #5c6b80;
+  --accent: #246bb8;
+  --accent-hover: #1d5796;
+  --button-text: #ffffff;
+  --border: #e1e8f0;
+  --shadow: 0 8px 24px rgb(29 54 84 / 8%);
+  --error: #b42332;
+  --focus-ring: rgb(40 120 208 / 35%);
+  --chart-grid: #dbe4ee;
+  --chart-line: #246bb8;
+  --chart-point: #1d5796;
+  --chart-fill-start: rgb(36 107 184 / 28%);
+  --chart-fill-end: rgb(36 107 184 / 2%);
+  --chart-label: #5c6b80;
+  --precipitation-low: #83c9f4;
+  --precipitation-mid: #498fcb;
+  --precipitation-high: #145b9a;
+  --weather-transition: 1.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--page-background);
+}
+
+body {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px 16px 14px;
+  background: var(--weather-gradient, linear-gradient(145deg, #eef6ff, #f2f6fb 72%));
+  color: var(--text-primary);
+  line-height: 1.7;
+  transition: background var(--weather-transition), color var(--weather-transition);
+}
+
+body::before,
+body::after {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+}
+
+body::before {
+  opacity: 0;
+  background-repeat: repeat;
+  transition: opacity var(--weather-transition);
+}
+
+body::after {
+  opacity: 0;
+  background-repeat: repeat;
+  transition: opacity var(--weather-transition);
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+body[data-weather="clear"][data-time="day"] {
+  --weather-gradient: linear-gradient(145deg, #c8e8ff, #f4faff 68%, #fff5d9);
+}
+
+body[data-weather="clear"][data-time="night"] {
+  --weather-gradient: linear-gradient(145deg, #101b3d, #273c68 58%, #46577a);
+}
+
+body[data-weather="cloudy"][data-time="day"] {
+  --weather-gradient: linear-gradient(145deg, #cdd9e5, #eff4f8 68%, #e4edf3);
+}
+
+body[data-weather="cloudy"][data-time="night"] {
+  --weather-gradient: linear-gradient(145deg, #182438, #293a51 64%, #40516a);
+}
+
+body[data-weather="rain"][data-time="day"] {
+  --weather-gradient: linear-gradient(145deg, #9db6c9, #d6e2ea 64%, #b9cbd8);
+}
+
+body[data-weather="rain"][data-time="night"] {
+  --weather-gradient: linear-gradient(145deg, #121d31, #24364f 64%, #334963);
+}
+
+body[data-weather="snow"][data-time="day"] {
+  --weather-gradient: linear-gradient(145deg, #d6e8f5, #f7fbff 62%, #dceaf4);
+}
+
+body[data-weather="snow"][data-time="night"] {
+  --weather-gradient: linear-gradient(145deg, #192b45, #344b69 64%, #526782);
+}
+
+body[data-weather="fog"][data-time="day"] {
+  --weather-gradient: linear-gradient(145deg, #cbd5db, #edf1f2 55%, #d8e0e3);
+}
+
+body[data-weather="fog"][data-time="night"] {
+  --weather-gradient: linear-gradient(145deg, #202a35, #394650 60%, #4b5960);
+}
+
+body[data-weather="storm"][data-time="day"] {
+  --weather-gradient: linear-gradient(145deg, #a7bbcf, #e1eaf1 62%, #c5d3df);
+}
+
+body[data-weather="storm"][data-time="night"] {
+  --weather-gradient: linear-gradient(145deg, #101827, #202c43 62%, #303d55);
+}
+
+body[data-weather="cloudy"]::before,
+body[data-weather="rain"]::before,
+body[data-weather="storm"]::before {
+  opacity: 0.22;
+  background-image:
+    radial-gradient(ellipse at 18% 24%, rgb(255 255 255 / 55%) 0 12%, transparent 42%),
+    radial-gradient(ellipse at 72% 18%, rgb(255 255 255 / 38%) 0 15%, transparent 46%);
+  background-size: 1100px 460px, 1300px 520px;
+  animation: weather-cloud-drift 48s ease-in-out infinite alternate;
+}
+
+body[data-weather="fog"]::before {
+  opacity: 0.3;
+  background-image: linear-gradient(110deg, transparent 12%, rgb(255 255 255 / 46%) 50%, transparent 82%);
+  background-size: 900px 100%;
+  animation: weather-cloud-drift 56s ease-in-out infinite alternate;
+}
+
+body[data-weather="rain"]::after,
+body[data-weather="storm"]::after {
+  opacity: 0.24;
+  background-image: repeating-linear-gradient(108deg, transparent 0 22px, rgb(255 255 255 / 50%) 23px 24px, transparent 25px 45px);
+  background-size: 150px 220px;
+  animation: weather-rain-fall 1.4s linear infinite;
+}
+
+body[data-weather="snow"]::after {
+  opacity: 0.48;
+  background-image:
+    radial-gradient(circle, rgb(255 255 255 / 90%) 0 2px, transparent 3px),
+    radial-gradient(circle, rgb(255 255 255 / 72%) 0 1.5px, transparent 2.5px);
+  background-position: 0 0, 35px 50px;
+  background-size: 90px 110px, 130px 150px;
+  animation: weather-snow-fall 14s linear infinite;
+}
+
+@keyframes weather-cloud-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 120px 0, -150px 0; }
+}
+
+@keyframes weather-rain-fall {
+  to { background-position: -45px 220px; }
+}
+
+@keyframes weather-snow-fall {
+  to { background-position: 70px 220px, -35px 300px; }
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--button-text);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+button:hover {
+  background: var(--accent-hover);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible,
+canvas:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--accent);
+  transform: translateY(-160%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+body[data-time="night"] #site-header,
+body[data-time="night"] #site-footer {
+  color: #f5f8ff;
+}
+
+body[data-time="night"] #site-title,
+body[data-time="night"] #city-search-form label {
+  color: #f5f8ff;
+}
+
+#site-header,
+#main-content,
+#site-footer {
+  width: min(100%, 920px);
+  margin-inline: auto;
+}
+
+#site-header {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+#site-title {
+  margin: 0;
+  color: var(--accent);
+  font-size: 1.8rem;
+  line-height: 1.3;
+}
+
+#city-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+#city-search-form label {
+  grid-column: 1 / -1;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+#city-search {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+#city-search::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+#city-search-results {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+#city-search-results[hidden] {
+  display: none;
+}
+
+.city-result {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 0;
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.city-result:hover {
+  background: var(--border);
+}
+
+#current-location-button {
+  width: 100%;
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#current-location-button:hover {
+  background: var(--surface-muted);
+}
+
+#current-weather,
+#air-quality-section,
+#hourly-forecast,
+#weather-forecast,
+#status-messages {
+  margin-bottom: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+#current-weather {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  border-color: transparent;
+  background: linear-gradient(145deg, #e5f1ff, #f7faff 75%);
+}
+
+#current-weather-title,
+#air-quality-title,
+#forecast-title {
+  grid-column: 1 / -1;
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+#air-quality-section {
+  display: grid;
+  gap: 14px;
+}
+
+#air-quality-title {
+  margin: 0;
+}
+
+.air-quality-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-muted);
+}
+
+.air-quality-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+}
+
+.air-quality-score,
+.air-quality-category,
+.air-quality-advice,
+.air-quality-meter-label,
+.air-quality-unavailable {
+  margin: 0;
+}
+
+.air-quality-score {
+  font-size: clamp(2.5rem, 10vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.air-quality-score[data-aqi-level="good"],
+.air-quality-category[data-aqi-level="good"] {
+  color: #16834a;
+}
+
+.air-quality-score[data-aqi-level="moderate"],
+.air-quality-category[data-aqi-level="moderate"] {
+  color: #8a6b00;
+}
+
+.air-quality-score[data-aqi-level="sensitive"],
+.air-quality-category[data-aqi-level="sensitive"] {
+  color: #b65300;
+}
+
+.air-quality-score[data-aqi-level="unhealthy"],
+.air-quality-category[data-aqi-level="unhealthy"] {
+  color: #bb2938;
+}
+
+.air-quality-score[data-aqi-level="very-unhealthy"],
+.air-quality-category[data-aqi-level="very-unhealthy"] {
+  color: #773b91;
+}
+
+.air-quality-score[data-aqi-level="hazardous"],
+.air-quality-category[data-aqi-level="hazardous"] {
+  color: #7e2638;
+}
+
+.air-quality-category {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.air-quality-meter-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.air-quality-meter {
+  position: relative;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #16834a 0%,
+    #16834a 10%,
+    #8a6b00 10%,
+    #8a6b00 20%,
+    #b65300 20%,
+    #b65300 30%,
+    #bb2938 30%,
+    #bb2938 40%,
+    #773b91 40%,
+    #773b91 60%,
+    #7e2638 60%,
+    #7e2638 100%
+  );
+}
+
+.air-quality-indicator {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--text-primary);
+  box-shadow: 0 1px 5px rgb(0 0 0 / 45%);
+  transform: translate(-50%, -50%);
+}
+
+.air-quality-advice {
+  color: var(--text-primary);
+}
+
+.air-quality-pollutants {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.air-quality-pollutants > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.air-quality-pollutants dt {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.air-quality-pollutants dd {
+  margin: 2px 0 0;
+  color: var(--text-primary);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.air-quality-unavailable {
+  color: var(--text-secondary);
+}
+
+#unit-controls {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#unit-controls button {
+  min-height: 38px;
+  padding: 5px 12px;
+  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+#unit-controls button:hover,
+#unit-controls button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--button-text);
+}
+
+#current-weather p {
+  min-width: 0;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+#current-weather p:has(#temperature) {
+  grid-column: 1 / -1;
+  padding: 14px 16px;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+#current-weather p:has(#last-updated) {
+  grid-column: 1 / -1;
+  font-size: 0.8rem !important;
+}
+
+#temperature {
+  display: block;
+  color: var(--accent);
+  font-size: clamp(2.5rem, 12vw, 4rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+#weather-description,
+#city-name,
+#weather-date,
+#apparent-temperature,
+#humidity,
+#wind-speed {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+#weather-forecast {
+  display: grid;
+  gap: 14px;
+}
+
+#forecast-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+  gap: 12px;
+}
+
+#hourly-forecast {
+  display: grid;
+  gap: 14px;
+}
+
+#hourly-forecast-title {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+#forecast-hours {
+  display: grid;
+  grid-auto-columns: minmax(118px, 1fr);
+  grid-auto-flow: column;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 2px 2px 12px;
+  scroll-snap-type: inline mandatory;
+  scrollbar-color: var(--accent) var(--surface-muted);
+}
+
+#forecast-hours > * {
+  min-width: 0;
+  padding: 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-muted);
+  text-align: center;
+  scroll-snap-align: start;
+}
+
+.forecast-precipitation-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.forecast-precipitation-chance {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.forecast-precipitation-icon {
+  font-size: 1.3rem;
+}
+
+.forecast-precipitation-progress {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.forecast-precipitation-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--precipitation-low);
+}
+
+.forecast-precipitation-progress[data-level="medium"] .forecast-precipitation-fill {
+  background: var(--precipitation-mid);
+}
+
+.forecast-precipitation-progress[data-level="high"] .forecast-precipitation-fill {
+  background: var(--precipitation-high);
+}
+
+.forecast-precipitation-progress[data-level="unavailable"] {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--surface-muted) 0 4px,
+    var(--border) 4px 8px
+  );
+}
+
+.forecast-precipitation-amount {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+#precipitation-chart {
+  display: block;
+  width: 100%;
+  height: 230px;
+  min-height: 190px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  touch-action: pan-y;
+}
+
+.hourly-card.is-current-hour {
+  border-color: var(--accent);
+  background: #e5f1ff;
+}
+
+.hourly-time,
+.hourly-card p {
+  margin: 0;
+}
+
+.hourly-time {
+  font-size: 0.95rem;
+}
+
+.hourly-icon {
+  display: block;
+  margin: 6px 0;
+  font-size: 1.7rem;
+}
+
+.hourly-temperature {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.hourly-description,
+.hourly-rain-chance {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+#hourly-temperature-chart {
+  display: block;
+  width: 100%;
+  height: 280px;
+  min-height: 220px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  touch-action: pan-y;
+}
+
+#forecast-days > * {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-muted);
+  box-shadow: 0 3px 10px rgb(29 54 84 / 4%);
+}
+
+#status-messages {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#status-messages p {
+  margin: 0 0 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+#status-messages #error-message {
+  border: 1px solid var(--border);
+  color: var(--error);
+}
+
+#status-messages [hidden] {
+  display: none;
+}
+
+#site-footer {
+  padding: 8px 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+#site-footer p {
+  margin: 0;
+}
+
+@media (min-width: 600px) {
+  body {
+    padding: 32px 24px 20px;
+  }
+
+  #site-header {
+    grid-template-columns: auto minmax(280px, 1fr) auto;
+    align-items: end;
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+
+  #site-title {
+    align-self: center;
+    font-size: 2rem;
+  }
+
+  #city-search-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  #current-location-button {
+    width: auto;
+    white-space: nowrap;
+  }
+
+  #current-weather,
+  #air-quality-section,
+  #hourly-forecast,
+  #weather-forecast {
+    padding: 26px;
+  }
+
+  #current-weather {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  #current-weather p:has(#temperature) {
+    grid-column: 1 / -1;
+  }
+
+  #forecast-days {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  #forecast-hours {
+    grid-auto-columns: minmax(130px, 1fr);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page-background: #111923;
+    --surface: #1b2634;
+    --surface-muted: #222f3f;
+    --text-primary: #e7edf5;
+    --text-secondary: #a8b6c8;
+    --accent: #73b3ff;
+    --accent-hover: #9ac7ff;
+    --button-text: #142235;
+    --border: #334255;
+    --shadow: 0 8px 24px rgb(0 0 0 / 20%);
+    --error: #ff9ba4;
+    --focus-ring: rgb(115 179 255 / 40%);
+    --chart-grid: #3a4b60;
+    --chart-line: #8bc2ff;
+    --chart-point: #b5d8ff;
+    --chart-fill-start: rgb(115 179 255 / 30%);
+    --chart-fill-end: rgb(115 179 255 / 2%);
+    --chart-label: #b7c5d7;
+    --precipitation-low: #70c5f5;
+    --precipitation-mid: #3e87c2;
+    --precipitation-high: #145b9a;
+  }
+
+  .air-quality-score[data-aqi-level="good"],
+  .air-quality-category[data-aqi-level="good"] {
+    color: #63db99;
+  }
+
+  .air-quality-score[data-aqi-level="moderate"],
+  .air-quality-category[data-aqi-level="moderate"] {
+    color: #f0cb52;
+  }
+
+  .air-quality-score[data-aqi-level="sensitive"],
+  .air-quality-category[data-aqi-level="sensitive"] {
+    color: #ff9b55;
+  }
+
+  .air-quality-score[data-aqi-level="unhealthy"],
+  .air-quality-category[data-aqi-level="unhealthy"] {
+    color: #ff7782;
+  }
+
+  .air-quality-score[data-aqi-level="very-unhealthy"],
+  .air-quality-category[data-aqi-level="very-unhealthy"] {
+    color: #dfa3f5;
+  }
+
+  .air-quality-score[data-aqi-level="hazardous"],
+  .air-quality-category[data-aqi-level="hazardous"] {
+    color: #ff8c9d;
+  }
+
+  body[data-weather="clear"][data-time="day"] {
+    --weather-gradient: linear-gradient(145deg, #203b59, #26384d 68%, #504533);
+  }
+
+  body[data-weather="clear"][data-time="night"] {
+    --weather-gradient: linear-gradient(145deg, #101b3d, #273c68 58%, #46577a);
+  }
+
+  body[data-weather="cloudy"][data-time="day"] {
+    --weather-gradient: linear-gradient(145deg, #293b4d, #354555 68%, #2a3b49);
+  }
+
+  body[data-weather="cloudy"][data-time="night"] {
+    --weather-gradient: linear-gradient(145deg, #182438, #293a51 64%, #40516a);
+  }
+
+  body[data-weather="rain"][data-time="day"] {
+    --weather-gradient: linear-gradient(145deg, #253e50, #344a5b 64%, #2c4252);
+  }
+
+  body[data-weather="rain"][data-time="night"] {
+    --weather-gradient: linear-gradient(145deg, #121d31, #24364f 64%, #334963);
+  }
+
+  body[data-weather="snow"][data-time="day"] {
+    --weather-gradient: linear-gradient(145deg, #30465a, #3a5062 62%, #2c4357);
+  }
+
+  body[data-weather="snow"][data-time="night"] {
+    --weather-gradient: linear-gradient(145deg, #192b45, #344b69 64%, #526782);
+  }
+
+  body[data-weather="fog"][data-time="day"] {
+    --weather-gradient: linear-gradient(145deg, #343f47, #424e55 55%, #35434b);
+  }
+
+  body[data-weather="fog"][data-time="night"] {
+    --weather-gradient: linear-gradient(145deg, #202a35, #394650 60%, #4b5960);
+  }
+
+  body[data-weather="storm"][data-time="day"] {
+    --weather-gradient: linear-gradient(145deg, #273548, #364456 62%, #2c3b4e);
+  }
+
+  body[data-weather="storm"][data-time="night"] {
+    --weather-gradient: linear-gradient(145deg, #101827, #202c43 62%, #303d55);
+  }
+
+  #current-weather {
+    background: linear-gradient(145deg, #1b3148, #1b2634 78%);
+  }
+
+  #current-weather p:has(#temperature) {
+    background: #202e3e;
+  }
+
+  .hourly-card.is-current-hour {
+    background: #243d58;
+  }
+
+  #forecast-days > * {
+    box-shadow: 0 3px 10px rgb(0 0 0 / 12%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  body::before,
+  body::after {
+    transition: none;
+    animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
