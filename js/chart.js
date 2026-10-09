@@ -85,6 +85,28 @@ function getNearestChartPoint(state, event) {
   return Math.max(0, Math.min(points.length - 1, Math.round(ratio * (points.length - 1))));
 }
 
+function chooseChartLabelStep(context, labels, plotWidth, pointCount) {
+  if (pointCount <= 1) return 1;
+  const widestLabel = labels.reduce(
+    (widest, label) => Math.max(widest, context.measureText(label).width),
+    0,
+  );
+  const availablePerPoint = plotWidth / pointCount;
+  return [1, 2, 3, 4, 6, 8, 12].find(
+    (step) => availablePerPoint * step >= widestLabel + 16,
+  ) ?? 12;
+}
+
+function formatCompactChartTime(time) {
+  const match = time.match(/^(\d{2}):(\d{2})$/);
+  if (!match) return time;
+  const hour = Number(match[1]);
+  const minute = match[2];
+  const period = hour < 12 ? "ص" : "م";
+  const compactHour = hour % 12 || 12;
+  return `${compactHour}${minute === "00" ? "" : `:${minute}`}${period}`;
+}
+
 function renderTemperatureChart(state) {
   const { canvas, points, temperatureUnit } = state;
   const bounds = canvas.getBoundingClientRect();
@@ -112,7 +134,29 @@ function renderTemperatureChart(state) {
   const labelColor = styles.getPropertyValue("--chart-label").trim();
   const fontFamily = styles.fontFamily || "sans-serif";
   const unitLabel = temperatureUnit === "F" ? "°ف" : "°م";
-  const margin = { top: 34, right: 42, bottom: 42, left: 44 };
+
+  if (points.length === 0) {
+    canvas.setAttribute("aria-label", "لا تتوفر بيانات درجات الحرارة لرسمها.");
+    return;
+  }
+
+  const compactLabels = width < 480;
+  const timeLabels = points.map((point, index) => (
+    index === 0 ? "الآن" : compactLabels ? formatCompactChartTime(point.time) : point.time
+  ));
+  const timeFontSize = compactLabels ? 11 : 13;
+  context.font = `${timeFontSize}px ${fontFamily}`;
+  const widestTimeLabel = timeLabels.reduce(
+    (widest, label) => Math.max(widest, context.measureText(label).width),
+    0,
+  );
+  const sidePadding = Math.ceil(widestTimeLabel / 2) + 8;
+  const margin = {
+    top: 34,
+    right: Math.max(42, sidePadding),
+    bottom: 42,
+    left: Math.max(44, sidePadding),
+  };
   const plot = {
     left: margin.left,
     right: width - margin.right,
@@ -123,11 +167,6 @@ function renderTemperatureChart(state) {
   state.width = width;
   state.height = height;
   state.unitLabel = unitLabel;
-
-  if (points.length === 0) {
-    canvas.setAttribute("aria-label", "لا تتوفر بيانات درجات الحرارة لرسمها.");
-    return;
-  }
 
   const values = points.map((point) => point.temp);
   const minimum = Math.min(...values);
@@ -159,16 +198,18 @@ function renderTemperatureChart(state) {
     context.fillText(`${Math.round(value)}${unitLabel}`, plot.left - 8, y);
   }
 
+  context.font = `${timeFontSize}px ${fontFamily}`;
+  const labelStep = chooseChartLabelStep(context, timeLabels, plotWidth, points.length);
   points.forEach((point, index) => {
-    if (index % 3 !== 0) return;
+    if (index !== 0 && index % labelStep !== 0) return;
     const x = xAt(index);
     context.beginPath();
     context.moveTo(x, plot.top);
     context.lineTo(x, plot.bottom);
     context.stroke();
-    context.textAlign = "center";
+    context.textAlign = index === 0 ? "left" : index === points.length - 1 ? "right" : "center";
     context.textBaseline = "top";
-    context.fillText(point.time, x, plot.bottom + 12);
+    context.fillText(timeLabels[index], x, plot.bottom + 12);
   });
 
   const coordinates = points.map((point, index) => ({ x: xAt(index), y: yAt(point.temp) }));
@@ -283,14 +324,17 @@ function drawPrecipitationChart(canvas, daily) {
     throw new Error("بيانات رسم احتمال الهطول غير صالحة.");
   }
 
+  const compactWeekdays = ["أحد", "اثن", "ثلا", "أرب", "خمي", "جمع", "سبت"];
   const points = daily.map((day) => {
     if (!day || typeof day.date !== "string"
       || (day.rainChance !== null && !Number.isFinite(day.rainChance))) {
       throw new Error("تحتوي بيانات احتمال الهطول على قيمة غير صالحة.");
     }
+    const date = new Date(`${day.date}T12:00:00`);
+    const label = new Intl.DateTimeFormat("ar", { weekday: "short" }).format(date);
     return {
-      label: new Intl.DateTimeFormat("ar", { weekday: "short" })
-        .format(new Date(`${day.date}T12:00:00`)),
+      label,
+      compactLabel: compactWeekdays[date.getDay()],
       value: day.rainChance === null ? null : Math.max(0, Math.min(100, day.rainChance)),
     };
   });
@@ -386,7 +430,21 @@ function renderPrecipitationChart(state) {
   const lowColor = styles.getPropertyValue("--precipitation-low").trim();
   const highColor = styles.getPropertyValue("--precipitation-high").trim();
   const fontFamily = styles.fontFamily || "sans-serif";
-  const margin = { top: 30, right: 20, bottom: 42, left: 38 };
+  const compactLabels = width < 480;
+  const labelFontSize = compactLabels ? 11 : 13;
+  const dayLabels = points.map((point) => compactLabels ? point.compactLabel : point.label);
+  context.font = `${labelFontSize}px ${fontFamily}`;
+  const widestDayLabel = dayLabels.reduce(
+    (widest, label) => Math.max(widest, context.measureText(label).width),
+    0,
+  );
+  const sidePadding = Math.ceil(widestDayLabel / 2) + 4;
+  const margin = {
+    top: 30,
+    right: Math.max(20, sidePadding),
+    bottom: 42,
+    left: Math.max(38, sidePadding),
+  };
   const plot = {
     left: margin.left,
     right: width - margin.right,
@@ -414,6 +472,8 @@ function renderPrecipitationChart(state) {
   });
 
   const step = plot.width / Math.max(1, points.length);
+  context.font = `${labelFontSize}px ${fontFamily}`;
+  const labelStep = chooseChartLabelStep(context, dayLabels, plot.width, points.length);
   const barWidth = Math.min(34, step * 0.56);
   const barPoints = points.map((point, index) => {
     const centerX = plot.left + step * (index + 0.5);
@@ -436,8 +496,13 @@ function renderPrecipitationChart(state) {
     context.textAlign = "center";
     context.textBaseline = "bottom";
     context.fillText(point.value === null ? "—" : `${Math.round(point.value)}٪`, centerX, Math.max(plot.top - 2, top - 5));
-    context.textBaseline = "top";
-    context.fillText(point.label, centerX, plot.bottom + 10);
+    if (index % labelStep === 0) {
+      context.font = `${labelFontSize}px ${fontFamily}`;
+      context.textAlign = index === 0 ? "left" : index === points.length - 1 ? "right" : "center";
+      context.textBaseline = "top";
+      context.fillText(dayLabels[index], centerX, plot.bottom + 10);
+      context.font = `12px ${fontFamily}`;
+    }
     return { x: centerX, y: point.value === null ? plot.bottom : top };
   });
 
